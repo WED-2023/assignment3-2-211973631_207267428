@@ -4,41 +4,87 @@ const MySql = require("../routes/utils/MySql");
 const DButils = require("../routes/utils/DButils");
 const bcrypt = require("bcrypt");
 
+const { getValidCountries } = require("../routes/utils/validCountries");
+
 router.post("/Register", async (req, res, next) => {
   try {
-    // parameters exists
-    // valid parameters
-    // username exists
-    let user_details = {
-      username: req.body.username,
-      firstname: req.body.firstname,
-      lastname: req.body.lastname,
-      country: req.body.country,
-      password: req.body.password,
-      email: req.body.email,
-      profilePic: req.body.profilePic
+    const {
+      username,
+      firstname,
+      lastname,
+      country,
+      password,
+      confirmPassword,
+      email,
+    } = req.body;
+
+    // 1. Check required fields
+
+    if (
+      !username ||
+      !firstname ||
+      !lastname ||
+      !country ||
+      !password ||
+      !confirmPassword ||
+      !email
+    ) {
+      throw { status: 400, message: "Missing required fields" };
     }
-    let users = [];
-    users = await DButils.execQuery("SELECT username from users");
 
-    if (users.find((x) => x.username === user_details.username))
-      throw { status: 409, message: "Username taken" };
+    const validCountries = getValidCountries();
+    if (!validCountries.includes(country.toLowerCase())) {
+      throw { status: 400, message: "Invalid country selection" };
+    }
 
-    // add the new username
-    let hash_password = bcrypt.hashSync(
-      user_details.password,
+    // 3. Validate username: 3–8 letters only
+    if (!/^[A-Za-z]{3,8}$/.test(username)) {
+      throw {
+        status: 400,
+        message: "Username must be 3-8 letters only (A-Z, a-z)",
+      };
+    }
+
+    // 4. Validate password: 5–10 chars, at least one number and one special character
+    if (!/^(?=.*[0-9])(?=.*[^A-Za-z0-9])[\S]{5,10}$/.test(password)) {
+      throw {
+        status: 400,
+        message:
+          "Password must be 5-10 characters and include at least one number and one special character",
+      };
+    }
+
+    // 5. Password match
+    if (password !== confirmPassword) {
+      throw { status: 400, message: "Passwords do not match" };
+    }
+
+    // 6. Check if username already exists
+    const users = await DButils.execQuery("SELECT username FROM users");
+    if (users.find((x) => x.username === username)) {
+      throw { status: 409, message: "Username already taken" };
+    }
+
+    // 7. Hash password
+    const hash_password = bcrypt.hashSync(
+      password,
       parseInt(process.env.bcrypt_saltRounds)
     );
 
+    // 8. Insert into DB
     await DButils.execQuery(
-      `INSERT INTO users (username, firstname, lastname, country, password, email, profilePic) VALUES ('${user_details.username}', '${user_details.firstname}', '${user_details.lastname}',
-      '${user_details.country}', '${hash_password}', '${user_details.email}', '${user_details.profilePic}')`
+      `INSERT INTO users (username, firstname, lastname, country, password, email)
+       VALUES ('${username}', '${firstname}', '${lastname}', '${country}', '${hash_password}', '${email}')`
     );
-    res.status(201).send({ message: "user created", success: true });
+
+    // 9. Respond
+    res.status(201).send({ message: "User created", success: true });
   } catch (error) {
     next(error);
   }
 });
+
+
 
 router.post("/Login", async (req, res, next) => {
   try {

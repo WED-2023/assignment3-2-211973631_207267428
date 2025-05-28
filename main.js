@@ -1,4 +1,4 @@
-require("dotenv").config();
+require("dotenv").config({ path: "./api.env" });
 //#region express configures
 var express = require("express");
 var path = require("path");
@@ -6,6 +6,15 @@ var logger = require("morgan");
 const session = require("client-sessions");
 const DButils = require("./routes/utils/DButils");
 var cors = require('cors')
+
+
+
+console.log("API key:", process.env.spooncular_apiKey);
+const { loadValidCountries } = require("./routes/utils/validCountries");
+loadValidCountries();
+
+
+
 
 var app = express();
 app.use(logger("dev")); //logger
@@ -50,7 +59,7 @@ app.get("/",function(req,res)
 // app.use(cors(corsConfig));
 // app.options("*", cors(corsConfig));
 
-var port = process.env.PORT || "80"; //local=3000 remote=80
+var port = process.env.PORT || "3000"; //local=3000 remote=80
 //#endregion
 const user = require("./routes/user");
 const recipes = require("./routes/recipes");
