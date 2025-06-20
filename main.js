@@ -51,13 +51,13 @@ app.get("/",function(req,res)
 // app.use(cors());
 // app.options("*", cors());
 
-// const corsConfig = {
-//   origin: true,
-//   credentials: true
-// };
+const corsConfig = {
+  origin: true,
+  credentials: true
+};
 
-// app.use(cors(corsConfig));
-// app.options("*", cors(corsConfig));
+app.use(cors(corsConfig));
+app.options("*", cors(corsConfig));
 
 var port = process.env.PORT || "3000"; //local=3000 remote=80
 //#endregion
@@ -114,3 +114,5 @@ process.on("SIGINT", function () {
   }
   process.exit();
 });
+
+module.exports = app;

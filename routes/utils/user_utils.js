@@ -49,9 +49,19 @@ async function likeRecipe(user_id, recipe_id) {
   `);
 }
 
+async function getTwoFamilyRecipesByUser(user_id) {
+  const rows = await DButils.execQuery(`
+    SELECT name,recipe_owner, when_its_made, ingredients, instructions, image
+    FROM family_recipes
+    WHERE user_id = '${user_id}'
+    LIMIT 2
+  `);
+  return rows;
+}
 
 exports.likeRecipe = likeRecipe;
 exports.getLastWatchedRecipes = getLastWatchedRecipes;
 exports.isTestUser = isTestUser;
 exports.markAsFavorite = markAsFavorite;
 exports.getFavoriteRecipes = getFavoriteRecipes;
+exports.getTwoFamilyRecipesByUser = getTwoFamilyRecipesByUser;

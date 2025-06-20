@@ -29,7 +29,7 @@ async function getRecipeInformation(recipe_id) {
         data: {
           id: recipe.id,
           title: recipe.title,
-          readyInMinutes: recipe.ready_in_minutes,
+          readyInMinutes: recipe.readyInMinutes,
           image: recipe.image,
           aggregateLikes: recipe.popularity + dbLikes,
           vegan: recipe.vegan === 1,
@@ -246,6 +246,7 @@ async function createCustomRecipe(user_id, recipeData) {
 
 
 
+// OLD VERSION: Returns full recipe objects
 async function getCustomRecipesByUser(user_id) {
   const recipes = await DButils.execQuery(`
     SELECT id, title, readyInMinutes, image, popularity,
@@ -271,6 +272,14 @@ async function getCustomRecipesByUser(user_id) {
   );
 
   return recipesWithLikes;
+}
+
+// NEW VERSION: Returns only recipe IDs
+async function getCustomRecipeIdsByUser(user_id) {
+  const recipes = await DButils.execQuery(`
+    SELECT id FROM custom_recipes WHERE user_id = '${user_id}'
+  `);
+  return recipes.map(r => r.id);
 }
 
 
@@ -311,6 +320,7 @@ async function getRecipeLikesCount(recipe_id) {
 
 exports.getRecipeLikesCount = getRecipeLikesCount;
 exports.getCustomRecipesByUser = getCustomRecipesByUser;
+exports.getCustomRecipeIdsByUser = getCustomRecipeIdsByUser;
 exports.markRecipeAsWatched = markRecipeAsWatched;
 exports.getRecipeDetails = getRecipeDetails;
 exports.get3RandomRecipes = get3RandomRecipes;

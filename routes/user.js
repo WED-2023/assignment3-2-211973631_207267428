@@ -5,6 +5,27 @@ const user_utils = require("./utils/user_utils");
 const recipe_utils = require("./utils/recipes_utils");
 
 /**
+ * Check if user is authenticated (no middleware required)
+ */
+router.get('/checkAuth', async (req, res, next) => {
+  try {
+    if (req.session && req.session.user_id) {
+      // Check if user exists in database
+      const users = await DButils.execQuery("SELECT user_id FROM users");
+      if (users.find((x) => x.user_id === req.session.user_id)) {
+        res.status(200).json({ authenticated: true, user_id: req.session.user_id });
+      } else {
+        res.status(200).json({ authenticated: false });
+      }
+    } else {
+      res.status(200).json({ authenticated: false });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+/**
  * Authenticate all incoming requests by middleware
  */
 router.use(async function (req, res, next) {
@@ -19,7 +40,6 @@ router.use(async function (req, res, next) {
     res.sendStatus(401);
   }
 });
-
 
 /**
  * This path gets body with recipeId and save this recipe in the favorites list of the logged-in user
@@ -45,8 +65,9 @@ router.get('/favorites', async (req,res,next) => { // should be called at start 
     const recipes_id = await user_utils.getFavoriteRecipes(user_id);
     let recipes_id_array = [];
     recipes_id.map((element) => recipes_id_array.push(element.recipe_id)); //extracting the recipe ids into array
-    const results = await recipe_utils.getRecipesPreview(recipes_id_array);
-    res.status(200).send(results);
+    // const results = await recipe_utils.getRecipesPreview(recipes_id_array);
+    // res.status(200).send(results);
+    res.status(200).send({ recipes_id }); // we did this change in 3.3 notice!@!@!@!@
   } catch(error){
     next(error); 
   }
@@ -64,8 +85,9 @@ router.post('/lastwatched', async (req, res, next) => { // same as favorites, fr
 
     const recipes_id = await user_utils.getLastWatchedRecipes(user_id, amount);
     const recipes_id_array = recipes_id.map((element) => element.recipe_id); // extracting recipe ids into array
-    const results = await recipe_utils.getRecipesPreview(recipes_id_array);
-    res.status(200).send(results);
+    // const results = await recipe_utils.getRecipesPreview(recipes_id_array);
+    // res.status(200).send(results);
+    res.status(200).send({ recipes_id_array }); // we did this change in 3.3 notice!@!@!@!@
   } catch (error) {
     next(error);
   }
@@ -75,13 +97,8 @@ router.post('/lastwatched', async (req, res, next) => { // same as favorites, fr
 router.get('/familyrecipes', async (req, res, next) => {
   try {
     const user_id = req.session.user_id;
-    const isTestUser = await user_utils.isTestUser(user_id);
-
-    if (isTestUser) {
-      res.status(200).json({ test_user: "true" }); // if the user is omertop , then in frontend show the recipes!!
-    } else {
-      res.status(403).send("Access denied");
-    }
+    const recipes = await user_utils.getTwoFamilyRecipesByUser(user_id);
+    res.status(200).json(recipes);
   } catch (error) {
     next(error);
   }
@@ -140,8 +157,8 @@ router.get("/myrecipes", async (req, res, next) => {
       return res.status(401).send({ message: "Not logged in", success: false });
     }
 
-    const recipes = await recipe_utils.getCustomRecipesByUser(req.user_id);
-    res.status(200).send(recipes);
+    const recipeIds = await recipe_utils.getCustomRecipeIdsByUser(req.user_id);
+    res.status(200).send({ recipe_ids: recipeIds });
   } catch (error) {
     console.error("Error in /myrecipes:", error.message);
     next(error);

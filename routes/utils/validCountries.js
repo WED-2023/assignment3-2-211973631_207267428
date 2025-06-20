@@ -4,7 +4,8 @@ let validCountries = [];
 
 async function loadValidCountries() {
   try {
-    const response = await axios.get("https://restcountries.com/v3.1/all");
+    
+    const response = await axios.get("https://restcountries.com/v3.1/all?fields=name");
     validCountries = response.data.map((c) => c.name.common.toLowerCase());
     console.log("✅ Countries loaded");
   } catch (err) {
